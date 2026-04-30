@@ -1,0 +1,55 @@
+# ========================
+# Virtual Environment
+# ========================
+venv/
+env/
+.venv/
+
+# ========================
+# Environment Variables (VERY IMPORTANT)
+# ========================
+.env
+
+# ========================
+# Python Cache Files
+# ========================
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# ========================
+# VS Code Settings (optional)
+# ========================
+.vscode/
+
+# ========================
+# OS Files
+# ========================
+.DS_Store
+Thumbs.db
+
+# ========================
+# Logs (FastAPI / backend logs)
+# ========================
+*.log
+
+# ========================
+# Testing / Coverage (if used later)
+# ========================
+.pytest_cache/
+htmlcov/
+.coverage
+
+# ========================
+# AI Model Files (optional - if large or trained locally)
+# ========================
+*.pkl
+*.joblib
+*.h5
+
+# ========================
+# Temporary uploads (if you add file uploads later)
+# ========================
+uploads/
+temp/
