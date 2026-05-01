@@ -1,6 +1,16 @@
 from app.config.database import pharmacy_collection
-from app.models.pharmacy_model import pharmacy_helper
 
-def get_medicines():
-    meds = pharmacy_collection.find()
-    return [pharmacy_helper(m) for m in meds]
+
+async def get_medicines():
+    medicines = []
+
+    async for med in pharmacy_collection.find():
+        medicine = {
+            "id": str(med["_id"]),
+            "medicine_name": med.get("medicine_name"),
+            "quantity": med.get("quantity")
+        }
+
+        medicines.append(medicine)
+
+    return medicines

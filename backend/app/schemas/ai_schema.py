@@ -1,4 +1,4 @@
 from pydantic import BaseModel
 
-class SymptomInput(BaseModel):
+class SymptomRequest(BaseModel):
     symptoms: str

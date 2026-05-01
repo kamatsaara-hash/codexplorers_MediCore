@@ -1,27 +1,39 @@
-from fastapi import APIRouter
-from app.schemas.ai_schema import SymptomInput
-from app.services import ai_service, pdf_service
+from fastapi import APIRouter, HTTPException
+from fastapi.responses import FileResponse
+from app.schemas.ai_schema import SymptomRequest
+from app.services.ai_service import process_symptoms
+from app.services.pdf_service import generate_pdf
 
 router = APIRouter()
 
 
+# ---------------------------------------
+# 🧠 AI PREDICTION
+# ---------------------------------------
 @router.post("/predict")
-def predict(data: SymptomInput):
-    return ai_service.get_prediction(data.symptoms)
+async def predict(data: SymptomRequest):
+    return await process_symptoms(data.symptoms)
 
 
+# ---------------------------------------
+# 📄 PDF REPORT
+# ---------------------------------------
 @router.post("/report")
-def generate_report(data: dict):
-    result = ai_service.get_prediction(data["symptoms"])
+async def generate_report(data: dict):
+    if "symptoms" not in data:
+        raise HTTPException(status_code=400, detail="Symptoms required")
+
+    result = await process_symptoms(data["symptoms"])
 
     pdf_data = {
         "name": data.get("name", "Patient"),
         "symptoms": data["symptoms"],
         "disease": result["disease"],
         "severity": result["severity"],
-        "specialization": result["specialization"]
+        "confidence": result.get("confidence", "N/A"),
+        "specialization": result["recommended_specialization"]
     }
 
-    file = pdf_service.generate_pdf(pdf_data)
+    file = generate_pdf(pdf_data)
 
-    return {"message": "PDF generated", "file": file}
+    return FileResponse(file, media_type="application/pdf", filename="medical_report.pdf")

@@ -1,9 +1,9 @@
 from fastapi import APIRouter
-from app.schemas.appointment_schema import AppointmentCreate
-from app.services import appointment_service
+from app.schemas.appointment_schema import Appointment
+from app.services.appointment_service import book_appointment
 
 router = APIRouter()
 
-@router.post("/")
-def book(data: AppointmentCreate):
-    return appointment_service.book_appointment(data)
+@router.post("")
+async def create_appointment(data: Appointment):
+    return await book_appointment(data)

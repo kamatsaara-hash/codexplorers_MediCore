@@ -1,4 +1,4 @@
-from pymongo import MongoClient
+from motor.motor_asyncio import AsyncIOMotorClient
 import os
 from dotenv import load_dotenv
 
@@ -6,10 +6,11 @@ load_dotenv()
 
 MONGO_URL = os.getenv("MONGO_URL")
 
-client = MongoClient(MONGO_URL)
+client = AsyncIOMotorClient(MONGO_URL)
 db = client["hospital_db"]
 
-patient_collection = db["patients"]
-doctor_collection = db["doctors"]
-appointment_collection = db["appointments"]
+# Collections
+patients_collection = db["patients"]
+doctors_collection = db["doctors"]
+appointments_collection = db["appointments"]
 pharmacy_collection = db["pharmacy"]

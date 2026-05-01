@@ -1,21 +1,35 @@
-from fastapi import APIRouter, Depends
-from app.core.security import verify_admin
-from app.services import doctor_service, patient_service, admin_service
+from fastapi import APIRouter
+from app.services.admin_service import (
+    get_admin_overview,
+    get_all_doctors,
+    get_patients_grouped_by_doctor,
+    get_pharmacy_data,
+    get_doctor_workload
+)
 
 router = APIRouter()
 
 
+@router.get("/overview")
+async def overview():
+    return await get_admin_overview()
+
+
 @router.get("/doctors")
-def get_all_doctors(admin=Depends(verify_admin)):
-    return doctor_service.get_all_doctors()
+async def doctors():
+    return await get_all_doctors()
 
 
 @router.get("/patients")
-def get_all_patients(admin=Depends(verify_admin)):
-    return patient_service.get_all_patients()
+async def patients():
+    return await get_patients_grouped_by_doctor()
 
 
-# 📊 NEW ANALYTICS
-@router.get("/doctor-status")
-def doctor_status(admin=Depends(verify_admin)):
-    return admin_service.get_doctor_status()
+@router.get("/pharmacy")
+async def pharmacy():
+    return await get_pharmacy_data()
+
+
+@router.get("/workload")
+async def workload():
+    return await get_doctor_workload()

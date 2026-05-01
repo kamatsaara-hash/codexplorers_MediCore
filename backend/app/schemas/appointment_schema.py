@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 
-class AppointmentCreate(BaseModel):
-    patient_id: str
+class Appointment(BaseModel):
     doctor_id: str
+    patient_email: str
     date: str

@@ -1,25 +1,19 @@
-from fastapi import APIRouter
-from app.schemas.patient_schema import PatientLogin
-from app.schemas.doctor_schema import DoctorLogin
-from app.schemas.auth_schema import AdminLogin
-from app.services import patient_service, auth_service
+from fastapi import APIRouter, HTTPException
+from app.schemas.auth_schema import LoginSchema, SignupSchema
+from app.services.auth_service import login_user, signup_patient
 
 router = APIRouter()
 
+@router.post("/login")
+async def login(data: LoginSchema):
+    user = await login_user(data)
+    if not user:
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+    return user
 
-# 👤 PATIENT LOGIN
-@router.post("/patient-login")
-def patient_login(data: PatientLogin):
-    return patient_service.login(data)
-
-
-# 🧑‍⚕️ DOCTOR LOGIN
-@router.post("/doctor-login")
-def doctor_login(data: DoctorLogin):
-    return auth_service.doctor_login(data)
-
-
-# 🛠 ADMIN LOGIN
-@router.post("/admin-login")
-def admin_login(data: AdminLogin):
-    return auth_service.admin_login(data)
+@router.post("/signup")
+async def signup(data: SignupSchema):
+    user = await signup_patient(data)
+    if not user:
+        raise HTTPException(status_code=400, detail="User exists")
+    return user

@@ -5,7 +5,7 @@ from app.services import patient_service
 router = APIRouter()
 
 
-# 👤 SIGNUP (MUST USE SERVICE)
+# 👤 SIGNUP
 @router.post("/signup")
 def signup(data: PatientSignup):
     return patient_service.signup(data)
@@ -15,3 +15,9 @@ def signup(data: PatientSignup):
 @router.post("/login")
 def login(data: PatientLogin):
     return patient_service.login(data)
+
+
+# 🔥 ADD THIS (CRITICAL FIX)
+@router.get("/")
+def get_all_patients():
+    return patient_service.get_all_patients()

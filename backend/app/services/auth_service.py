@@ -1,28 +1,55 @@
 import os
+from app.config.database import patients_collection, doctors_collection
+from app.utils.hashing import verify_password, hash_password
 from dotenv import load_dotenv
-from app.config.database import doctor_collection
-from app.utils.hashing import verify_password
 
 load_dotenv()
 
-
-# 🛠 ADMIN LOGIN
-def admin_login(data):
-    if data.email == os.getenv("ADMIN_EMAIL") and data.password == os.getenv("ADMIN_PASSWORD"):
-        return {"message": "Admin login success"}
-    return {"error": "Invalid admin credentials"}
+ADMIN_EMAIL = os.getenv("ADMIN_EMAIL")
+ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD")
 
 
-# 🧑‍⚕️ DOCTOR LOGIN
-def doctor_login(data):
-    doctor = doctor_collection.find_one({"email": data.email})
+async def login_user(data):
+    # ---------------- ADMIN ----------------
+    if data.role == "admin":
+        if data.email == ADMIN_EMAIL and data.password == ADMIN_PASSWORD:
+            return {
+                "role": "admin",
+                "email": data.email,
+                "name": "Admin"
+            }
+        return None
 
-    if doctor and verify_password(data.password, doctor["password"]):
-        return {
-            "message": "Doctor login successful",
-            "doctor_id": str(doctor["_id"]),
-            "name": doctor["name"],
-            "specialization": doctor["specialization"]
-        }
+    # ---------------- DB USERS ----------------
+    if data.role == "doctor":
+        user = await doctors_collection.find_one({"email": data.email})
+    else:
+        user = await patients_collection.find_one({"email": data.email})
 
-    return {"error": "Invalid credentials"}
+    if not user:
+        return None
+
+    # verify password
+    if not verify_password(data.password, user["password"]):
+        return None
+
+    # 🔥 FIX: CLEAN RESPONSE (NO ObjectId)
+    return {
+        "role": data.role,
+        "email": user["email"],
+        "name": user.get("name", "User")
+    }
+
+
+async def signup_patient(data):
+    existing = await patients_collection.find_one({"email": data.email})
+    if existing:
+        return None
+
+    patient = data.dict()
+    patient["password"] = hash_password(data.password)
+
+    await patients_collection.insert_one(patient)
+    patient["_id"] = str(patient["_id"])
+    del patient["password"]
+    return patient

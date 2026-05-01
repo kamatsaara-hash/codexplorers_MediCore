@@ -1,8 +1,8 @@
 from fastapi import APIRouter
-from app.services import pharmacy_service
+from app.services.pharmacy_service import get_medicines
 
 router = APIRouter()
 
-@router.get("/")
-def get_meds():
-    return pharmacy_service.get_medicines()
+@router.get("")
+async def pharmacy():
+    return await get_medicines()
