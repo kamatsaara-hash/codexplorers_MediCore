@@ -44,7 +44,7 @@ htmlcov/
 # ========================
 # AI Model Files (optional - if large or trained locally)
 # ========================
-*.pkl
+# *.pkl (Removed so models deploy to Render!)
 *.joblib
 *.h5
 
