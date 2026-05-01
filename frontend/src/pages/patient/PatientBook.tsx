@@ -1,45 +1,88 @@
-import { useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { CalendarPlus } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { AvailabilityBadge } from "@/components/StatusBadges";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { MAX_PER_DAY, MOCK_DOCTORS } from "@/lib/mock";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { auth } from "@/lib/auth";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
+
+const MAX_PER_DAY = 10;
+
+type Doctor = {
+  id: string;
+  name: string;
+  specialization: string;
+  patients_today: number;
+};
 
 const PatientBook = () => {
   const [params] = useSearchParams();
   const preselect = params.get("doctor");
 
-  const doctors = useMemo(
-    () => MOCK_DOCTORS.filter((d) => d.patientsToday < MAX_PER_DAY),
-    []
-  );
-
+  const [doctors, setDoctors] = useState<Doctor[]>([]);
+  const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<string | null>(preselect);
-  const selectedDoc = MOCK_DOCTORS.find((d) => d.id === selected) || null;
   const [submitting, setSubmitting] = useState(false);
 
+  // 🔥 Fetch doctors
+  useEffect(() => {
+    const fetchDoctors = async () => {
+      try {
+        const data: Doctor[] = await api.getDoctors();
+
+        // only available doctors
+        const available = data.filter(
+          (d) => d.patients_today < MAX_PER_DAY
+        );
+
+        setDoctors(available);
+      } catch (err) {
+        console.error("Failed to fetch doctors:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDoctors();
+  }, []);
+
+  const selectedDoc = doctors.find((d) => d.id === selected) || null;
+
+  // 🔥 Book appointment
   const confirm = async () => {
     if (!selectedDoc) return;
+
     setSubmitting(true);
+
     try {
       await api.bookAppointment({
         doctor_id: selectedDoc.id,
         patient_email: auth.get()?.email ?? "",
         date: new Date().toISOString(),
       });
+
       toast.success(`Appointment booked with ${selectedDoc.name}`);
-    } catch {
-      toast.success(`Appointment booked with ${selectedDoc.name} (offline)`);
+    } catch (err) {
+      console.error(err);
+      toast.error("Booking failed");
     } finally {
       setSubmitting(false);
       setSelected(null);
     }
   };
+
+  if (loading) {
+    return <div className="p-6">Loading doctors...</div>;
+  }
 
   return (
     <div>
@@ -55,21 +98,43 @@ const PatientBook = () => {
       ) : (
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {doctors.map((d) => (
-            <div key={d.id} className="glass relative overflow-hidden rounded-2xl p-5 transition-all hover:-translate-y-1 hover:shadow-glow">
+            <div
+              key={d.id}
+              className="glass relative overflow-hidden rounded-2xl p-5 transition-all hover:-translate-y-1 hover:shadow-glow"
+            >
               <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/60 to-transparent" />
+
               <div className="flex items-center gap-3">
                 <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-primary text-sm font-bold text-primary-foreground">
-                  {d.name.split(" ").map((n) => n[0]).slice(0, 2).join("")}
+                  {d.name
+                    .split(" ")
+                    .map((n) => n[0])
+                    .slice(0, 2)
+                    .join("")}
                 </div>
+
                 <div className="min-w-0">
-                  <div className="truncate font-display text-base font-semibold">{d.name}</div>
-                  <div className="text-xs text-muted-foreground">{d.specialization}</div>
+                  <div className="truncate font-display text-base font-semibold">
+                    {d.name}
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    {d.specialization}
+                  </div>
                 </div>
               </div>
 
               <div className="mt-4 flex items-center justify-between">
-                <AvailabilityBadge available={d.patientsToday < MAX_PER_DAY} count={d.patientsToday} max={MAX_PER_DAY} />
-                <Button size="sm" onClick={() => setSelected(d.id)} className="bg-gradient-primary text-primary-foreground">
+                <AvailabilityBadge
+                  available={d.patients_today < MAX_PER_DAY}
+                  count={d.patients_today}
+                  max={MAX_PER_DAY}
+                />
+
+                <Button
+                  size="sm"
+                  onClick={() => setSelected(d.id)}
+                  className="bg-gradient-primary text-primary-foreground"
+                >
                   <CalendarPlus className="mr-1.5 h-4 w-4" />
                   Book
                 </Button>
@@ -82,19 +147,47 @@ const PatientBook = () => {
       <Dialog open={!!selectedDoc} onOpenChange={(o) => !o && setSelected(null)}>
         <DialogContent className="glass-strong border-primary/30">
           <DialogHeader>
-            <DialogTitle className="font-display">Confirm Appointment</DialogTitle>
+            <DialogTitle className="font-display">
+              Confirm Appointment
+            </DialogTitle>
           </DialogHeader>
+
           {selectedDoc && (
             <div className="space-y-2 text-sm">
-              <div className="flex justify-between"><span className="text-muted-foreground">Doctor</span><span className="font-medium">{selectedDoc.name}</span></div>
-              <div className="flex justify-between"><span className="text-muted-foreground">Specialization</span><span>{selectedDoc.specialization}</span></div>
-              <div className="flex justify-between"><span className="text-muted-foreground">Today's load</span><span>{selectedDoc.patientsToday}/{MAX_PER_DAY}</span></div>
-              <div className="flex justify-between"><span className="text-muted-foreground">Patient</span><span>{auth.get()?.name}</span></div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Doctor</span>
+                <span className="font-medium">{selectedDoc.name}</span>
+              </div>
+
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Specialization</span>
+                <span>{selectedDoc.specialization}</span>
+              </div>
+
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Today's load</span>
+                <span>
+                  {selectedDoc.patients_today}/{MAX_PER_DAY}
+                </span>
+              </div>
+
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Patient</span>
+                <span>{auth.get()?.email}</span>
+              </div>
             </div>
           )}
+
           <DialogFooter>
-            <Button variant="outline" onClick={() => setSelected(null)}>Cancel</Button>
-            <Button disabled={submitting} onClick={confirm} className="bg-gradient-primary text-primary-foreground">
+            <Button variant="outline" onClick={() => setSelected(null)}>
+              Cancel
+            </Button>
+
+            <Button
+              disabled={submitting}
+              onClick={confirm}
+              className="bg-gradient-primary text-primary-foreground"
+            >
               {submitting ? "Booking…" : "Confirm booking"}
             </Button>
           </DialogFooter>

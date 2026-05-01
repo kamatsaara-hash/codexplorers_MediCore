@@ -35,6 +35,32 @@ const PatientReports = () => {
     }, 50);
   };
 
+  const onDownloadPdf = async () => {
+    if (!report) return;
+    try {
+      const BASE_URL = (import.meta.env.VITE_API_URL as string) || "http://127.0.0.1:8000";
+      const res = await fetch(`${BASE_URL}/ai/report`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: report.patient,
+          symptoms: report.symptoms
+        })
+      });
+      if (!res.ok) throw new Error("Failed to download PDF");
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "medical_report.pdf";
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   if (!report) {
     return (
       <div>
@@ -60,7 +86,7 @@ const PatientReports = () => {
             <Button variant="outline" onClick={onPrint} className="border-border/60">
               <Printer className="mr-1.5 h-4 w-4" /> Print
             </Button>
-            <Button onClick={onPrint} className="bg-gradient-primary text-primary-foreground">
+            <Button onClick={onDownloadPdf} className="bg-gradient-primary text-primary-foreground">
               <Download className="mr-1.5 h-4 w-4" /> Download PDF
             </Button>
           </div>

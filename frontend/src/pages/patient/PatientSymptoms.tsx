@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { SeverityBadge, AvailabilityBadge } from "@/components/StatusBadges";
 import { api, PredictionResult } from "@/lib/api";
-import { MAX_PER_DAY, MOCK_DOCTORS } from "@/lib/mock";
+
 import { auth } from "@/lib/auth";
 import { toast } from "sonner";
 
@@ -16,40 +16,21 @@ const PatientSymptoms = () => {
   const [result, setResult] = useState<PredictionResult | null>(null);
   const navigate = useNavigate();
 
-  const fallbackPrediction = (input: string): PredictionResult => {
-    const lc = input.toLowerCase();
-    let spec = "General Medicine";
-    let disease = "Viral infection";
-    let severity: "low" | "medium" | "high" = "low";
-    if (/(chest|heart|palpit)/.test(lc)) { spec = "Cardiology"; disease = "Possible cardiac strain"; severity = "high"; }
-    else if (/(headache|migraine|dizzy)/.test(lc)) { spec = "Neurology"; disease = "Migraine"; severity = "medium"; }
-    else if (/(cough|breath|wheeze|asthma)/.test(lc)) { spec = "Pulmonology"; disease = "Lower respiratory infection"; severity = "medium"; }
-    else if (/(skin|rash|itch)/.test(lc)) { spec = "Dermatology"; disease = "Contact dermatitis"; severity = "low"; }
-
-    const docs = MOCK_DOCTORS
-      .filter((d) => d.specialization === spec || spec === "General Medicine")
-      .map((d) => ({
-        id: d.id,
-        name: d.name,
-        specialization: d.specialization,
-        patients_today: d.patientsToday,
-        max_per_day: MAX_PER_DAY,
-        available: d.patientsToday < MAX_PER_DAY,
-      }));
-    return { disease, severity, confidence: 0.78, recommended_specialization: spec, recommended_doctors: docs };
-  };
 
   const onPredict = async () => {
-    if (!symptoms.trim()) return toast.error("Describe your symptoms first");
+    if (!symptoms.trim()) {
+      return toast.error("Describe your symptoms first");
+    }
+
     setLoading(true);
     setResult(null);
+
     try {
       const r = await api.predict(symptoms);
       setResult(r);
-    } catch {
-      // Fallback so the UI demo always works without a backend.
-      setResult(fallbackPrediction(symptoms));
-      toast.message("Showing offline prediction (FastAPI not reachable)");
+    } catch (err) {
+      console.error(err);
+      toast.error("AI prediction failed");
     } finally {
       setLoading(false);
     }

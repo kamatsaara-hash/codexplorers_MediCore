@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { auth } from "@/lib/auth";
+import { api } from "@/lib/api";
 import { toast } from "sonner";
 
 const Signup = () => {
@@ -26,16 +27,34 @@ const Signup = () => {
   const update = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement>) =>
     setForm({ ...form, [k]: e.target.value });
 
-  const onSubmit = (e: React.FormEvent) => {
+  const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.name || !form.email || !form.password) return toast.error("Please fill required fields");
     if (form.password !== form.confirm) return toast.error("Passwords do not match");
+    
     setLoading(true);
-    setTimeout(() => {
-      auth.set({ role: "patient", email: form.email, name: form.name });
+    try {
+      // 1. Create account on backend
+      await api.signup({
+        name: form.name,
+        email: form.email,
+        phone: form.phone,
+        age: parseInt(form.age) || 0,
+        gender: form.gender,
+        password: form.password,
+      });
+
+      // 2. Log in directly
+      await auth.login(form.email, form.password, "patient");
+      
       toast.success("Account created. Welcome!");
       navigate("/patient");
-    }, 700);
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err.message || "Failed to create account");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

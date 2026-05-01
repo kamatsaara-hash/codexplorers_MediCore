@@ -1,15 +1,29 @@
-// Lightweight client-side role/session store (UI-only, no real auth).
+import { api } from "./api";
+
 export type Role = "admin" | "doctor" | "patient";
 
 const KEY = "medicore.session";
 
 export interface Session {
   role: Role;
-  name: string;
   email: string;
+  name?: string;
 }
 
 export const auth = {
+  async login(email: string, password: string, role: Role) {
+    const res = await api.login(email, password, role);
+
+    const session: Session = {
+      role: res.role as Role,
+      email: res.email,
+      name: (res as any).name || "User",
+    };
+
+    localStorage.setItem(KEY, JSON.stringify(session));
+    return session;
+  },
+
   get(): Session | null {
     try {
       const raw = localStorage.getItem(KEY);
@@ -18,10 +32,8 @@ export const auth = {
       return null;
     }
   },
-  set(s: Session) {
-    localStorage.setItem(KEY, JSON.stringify(s));
-  },
-  clear() {
+
+  logout() {
     localStorage.removeItem(KEY);
   },
 };

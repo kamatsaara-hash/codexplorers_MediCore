@@ -29,18 +29,28 @@ const Login = () => {
     return local.replace(/\b\w/g, (c) => c.toUpperCase());
   }, [email, meta.label]);
 
-  const onSubmit = (e: React.FormEvent) => {
+  const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
     if (!email || !password) {
       toast.error("Enter email and password");
       return;
     }
-    setLoading(true);
-    setTimeout(() => {
-      auth.set({ role, email, name });
-      toast.success(`Welcome back, ${name}`);
+
+    try {
+      setLoading(true);
+
+      await auth.login(email, password, role);
+
+      toast.success(`Welcome back`);
+
       navigate(`/${role}`);
-    }, 600);
+    } catch (err: any) {
+      console.error(err);
+      toast.error("Invalid credentials");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

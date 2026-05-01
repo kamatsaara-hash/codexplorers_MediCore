@@ -1,7 +1,13 @@
+import { useEffect, useState } from "react";
 import { PageHeader } from "@/components/PageHeader";
-import { MOCK_PHARMACY } from "@/lib/mock";
+import { api } from "@/lib/api";
 
 const Pharmacy = ({ readOnlyNote }: { readOnlyNote?: string }) => {
+  const [pharmacy, setPharmacy] = useState<any[]>([]);
+
+  useEffect(() => {
+    api.getPharmacy().then((data: any) => setPharmacy(data)).catch(console.error);
+  }, []);
   return (
     <div>
       <PageHeader title="Pharmacy Inventory" subtitle={readOnlyNote ?? "Live medicine stock across hospital pharmacy."} />
@@ -18,13 +24,14 @@ const Pharmacy = ({ readOnlyNote }: { readOnlyNote?: string }) => {
               </tr>
             </thead>
             <tbody>
-              {MOCK_PHARMACY.map((m) => {
-                const low = m.quantity < 50;
+              {pharmacy.map((m: any) => {
+                const qty = parseInt(m.quantity) || 0;
+                const low = qty < 50;
                 return (
                   <tr key={m.id} className="border-b border-border/30 last:border-0 hover:bg-primary/5">
-                    <td className="px-5 py-3 font-medium">{m.name}</td>
-                    <td className="px-5 py-3 text-muted-foreground">{m.category}</td>
-                    <td className="px-5 py-3 text-right font-mono text-primary">{m.quantity}</td>
+                    <td className="px-5 py-3 font-medium">{m.medicine_name}</td>
+                    <td className="px-5 py-3 text-muted-foreground">{m.category || "General"}</td>
+                    <td className="px-5 py-3 text-right font-mono text-primary">{qty}</td>
                     <td className="px-5 py-3 text-right">
                       <span className={`rounded-full border px-2.5 py-0.5 text-xs ${low ? "border-destructive/40 bg-destructive/10 text-destructive" : "border-success/40 bg-success/10 text-success"}`}>
                         {low ? "Low stock" : "In stock"}

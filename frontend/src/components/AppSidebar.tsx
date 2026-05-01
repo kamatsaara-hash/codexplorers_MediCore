@@ -96,7 +96,7 @@ export const AppSidebar = ({ role }: { role: Role }) => {
           <SidebarMenuItem>
             <SidebarMenuButton
               onClick={() => {
-                auth.clear();
+                auth.logout();
                 navigate("/");
               }}
               className="text-sidebar-foreground/80 hover:text-destructive"
